@@ -143,6 +143,18 @@ def main():
     # Header
     st.markdown("<h1 style='text-align: center; color: white;'>🎁 Toy Finder</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: white; font-size: 1.2em;'>Find the Perfect Toy for Your Daughter <span class='stats-badge'>586 unique toys</span></p>", unsafe_allow_html=True)
+
+    # Image expiration note
+    with st.expander("ℹ️ Note about Images"):
+        st.write("""
+        **Image URLs expire after ~2 days** due to CDN security.
+
+        - Images were last scraped recently
+        - To refresh images, run: `python scraper.py && python database.py`
+        - All toy information (name, price, age, etc.) remains accurate
+        - Click 'View Details' to see current images on TheElefant.ai website
+        """)
+
     st.markdown("<br>", unsafe_allow_html=True)
 
     # Sidebar filters
@@ -212,12 +224,13 @@ def main():
                 with col:
                     # Container for each toy
                     with st.container():
-                        # Display image first
+                        # Display image first (URLs may expire after ~2 days due to CDN signatures)
                         if toy.get('images') and len(toy['images']) > 0:
                             try:
-                                st.image(toy['images'][0]['url'], use_container_width=True)
+                                st.image(toy['images'][0]['url'], use_column_width=True)
                             except Exception as e:
-                                st.write("🖼️ Image unavailable")
+                                # Image expired or unavailable - show placeholder
+                                st.info("🖼️ Image temporarily unavailable (CDN URL expired)\nRe-scrape data to refresh image URLs")
 
                         # Toy details
                         st.markdown(f"**{toy['name']}**")
