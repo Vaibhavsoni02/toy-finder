@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toy Finder - Find the Perfect Toy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        .filters {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            height: fit-content;
+            max-height: calc(100vh - 180px);
+            overflow-y: auto;
+            position: sticky;
+            top: 20px;
+        }
+
+        .filter-section {
+            margin-bottom: 25px;
+        }
+
+        .filter-section h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-section label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        .filter-section input[type="number"],
+        .filter-section input[type="text"],
+        .filter-section input[type="range"],
+        .filter-section select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .filter-section input[type="range"] {
+            padding: 0;
+            height: 8px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .filter-section input[type="number"]:focus,
+        .filter-section input[type="text"]:focus,
+        .filter-section select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-section select {
+            cursor: pointer;
+            background: white;
+        }
+
+        .search-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-btn:active {
+            transform: translateY(0);
+        }
+
+        .clear-btn {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: #f5f5ff;
+        }
+
+        .results {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            min-height: 400px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .results-count {
+            font-size: 1.3em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .sort-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sort-control label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .sort-control select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.95em;
+            cursor: pointer;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .toy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .toy-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .toy-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+
+        .toy-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #f5f5f5;
+        }
+
+        .toy-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            min-height: 50px;
+        }
+
+        .toy-price {
+            font-size: 1.5em;
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .toy-age {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .toy-type {
+            display: inline-block;
+            background: #e8eaf6;
+            color: #667eea;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-left: 8px;
+            font-weight: 500;
+        }
+
+        .toy-description {
+            color: #666;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .toy-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+
+        .feature-tag {
+            background: #e8eaf6;
+            color: #667eea;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .toy-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .toy-link:hover {
+            text-decoration: underline;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 50px;
+            color: #999;
+        }
+
+        .no-results-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .stats-badge {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                position: static;
+                max-height: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .toy-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎁 Toy Finder</h1>
+            <p class="subtitle">Find the Perfect Toy for Your Daughter <span class="stats-badge">586 unique toys</span></p>
+        </header>
+
+        <div class="main-content">
+            <aside class="filters">
+                <form id="filterForm">
+                    <div class="filter-section">
+                        <h3>👶 Child's Age</h3>
+                        <label for="age">Age (in years):</label>
+                        <input type="number" id="age" name="age" step="0.5" min="0" max="12" placeholder="e.g., 2.5">
+                    </div>
+
+                    <div class="filter-section">
+                        <h3>💰 Budget</h3>
+                        <label for="minPrice">Min Price: ₹<span id="minPriceValue">0</span></label>
+                        <input type="range" id="minPrice" name="minPrice" min="0" max="5500" value="0" step="50">
+
+                        <label for="maxPrice" style="margin-top: 15px;">Max Price: ₹<span id="maxPriceValue">5500</span></label>
+                        <input type="range" id="maxPrice" name="maxPrice" min="0" max="5500" value="5500" step="50">
+                    </div>
+
+                    <div class="filter-section">
+                        <h3>🎲 Toy Type</h3>
+                        <label for="toyType">Type:</label>
+                        <select id="toyType" name="toyType">
+                            <option value="">All Types</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-section">
+                        <h3>🔍 Keywords</h3>
+                        <label for="search">Search:</label>
+                        <input type="text" id="search" name="search" placeholder="e.g., puzzle, educational">
+                    </div>
+
+                    <button type="submit" class="search-btn">🔍 Find Toys</button>
+                    <button type="button" class="clear-btn" id="resetBtn">Reset All Filters</button>
+                </form>
+            </aside>
+
+            <main class="results">
+                <div class="results-header">
+                    <div class="results-count" id="resultsCount">Click "Find Toys" to see all 586 toys</div>
+                    <div class="sort-control">
+                        <label for="sortBy">Sort by:</label>
+                        <select id="sortBy" name="sortBy">
+                            <option value="price_asc">Price: Low to High</option>
+                            <option value="price_desc">Price: High to Low</option>
+                            <option value="name_asc">Name: A to Z</option>
+                            <option value="name_desc">Name: Z to A</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="resultsContainer">
+                    <div class="loading">
+                        👈 Use the filters on the left to find toys, or click "Find Toys" to see all 586!
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        let currentResults = [];
+
+        // Price slider updates
+        document.getElementById('minPrice').addEventListener('input', function() {
+            document.getElementById('minPriceValue').textContent = this.value;
+        });
+
+        document.getElementById('maxPrice').addEventListener('input', function() {
+            document.getElementById('maxPriceValue').textContent = this.value;
+        });
+
+        // Load toy types on page load
+        async function loadToyTypes() {
+            try {
+                const response = await fetch('/api/toy-types');
+                const types = await response.json();
+
+                const typeSelect = document.getElementById('toyType');
+                types.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type.replace('_', ' ');
+                    typeSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading toy types:', error);
+            }
+        }
+
+        // Reset All Filters
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('filterForm').reset();
+            document.getElementById('minPriceValue').textContent = '0';
+            document.getElementById('maxPriceValue').textContent = '5500';
+        });
+
+        // Sort change handler
+        document.getElementById('sortBy').addEventListener('change', function() {
+            if (currentResults.length > 0) {
+                displayResults(currentResults, this.value);
+            }
+        });
+
+        // Search toys
+        async function searchToys(e) {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const age = formData.get('age');
+            const minPrice = formData.get('minPrice');
+            const maxPrice = formData.get('maxPrice');
+            const search = formData.get('search');
+            const toyType = formData.get('toyType');
+            const sortBy = document.getElementById('sortBy').value;
+
+            const searchData = {
+                age: age || null,
+                min_price: minPrice && minPrice !== '0' ? minPrice : null,
+                max_price: maxPrice && maxPrice !== '5500' ? maxPrice : null,
+                search_text: search || null,
+                toy_type: toyType || null,
+                sort_by: sortBy
+            };
+
+            // Show loading
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div>Searching for toys...</div>';
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(searchData)
+                });
+
+                const data = await response.json();
+                currentResults = data.toys;
+
+                // Update count
+                document.getElementById('resultsCount').textContent =
+                    `Found ${data.count} toy${data.count !== 1 ? 's' : ''}`;
+
+                displayResults(data.toys, sortBy);
+            } catch (error) {
+                console.error('Error searching toys:', error);
+                resultsContainer.innerHTML = '<div class="no-results">Error loading toys. Please try again.</div>';
+            }
+        }
+
+        // Display results
+        function displayResults(toys, sortBy) {
+            const resultsContainer = document.getElementById('resultsContainer');
+
+            if (toys.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="no-results">
+                        <div class="no-results-icon">😔</div>
+                        <h2>No toys found</h2>
+                        <p>Try adjusting your filters</p>
+                    </div>
+                `;
+            } else {
+                const toyGrid = document.createElement('div');
+                toyGrid.className = 'toy-grid';
+
+                toys.forEach(toy => {
+                    const toyCard = createToyCard(toy);
+                    toyGrid.appendChild(toyCard);
+                });
+
+                resultsContainer.innerHTML = '';
+                resultsContainer.appendChild(toyGrid);
+            }
+        }
+
+        // Create toy card
+        function createToyCard(toy) {
+            const card = document.createElement('div');
+            card.className = 'toy-card';
+
+            const imageUrl = toy.images && toy.images.length > 0 ? toy.images[0].url : '';
+
+            const toyTypeDisplay = toy.type ? toy.type.replace('_', ' ') : '';
+
+            const features = toy.features ? toy.features.split(',').slice(0, 3) : [];
+            const featuresHTML = features.map(f => `<span class="feature-tag">${f}</span>`).join('');
+
+            card.innerHTML = `
+                ${imageUrl ? `<img src="${imageUrl}" alt="${toy.name}" class="toy-image">` : ''}
+                <div class="toy-name">${toy.name}</div>
+                <div class="toy-price">₹${toy.price}</div>
+                <div>
+                    <span class="toy-age">👶 ${toy.min_age_years?.toFixed(1)}-${toy.max_age_years?.toFixed(1)} years</span>
+                    ${toyTypeDisplay ? `<span class="toy-type">${toyTypeDisplay}</span>` : ''}
+                </div>
+                ${toy.short_description ? `<div class="toy-description">${toy.short_description}</div>` : ''}
+                ${features.length > 0 ? `<div class="toy-features">${featuresHTML}</div>` : ''}
+                ${toy.slug ? `<a href="https://www.theelefant.ai/toy/${toy.slug}" target="_blank" class="toy-link">View Details →</a>` : ''}
+            `;
+
+            return card;
+        }
+
+        // Event listeners
+        document.getElementById('filterForm').addEventListener('submit', searchToys);
+
+        // Load toy types on page load
+        loadToyTypes();
+    </script>
+</body>
+</html>
