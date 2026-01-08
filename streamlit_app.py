@@ -18,45 +18,8 @@ st.set_page_config(
 # Custom CSS
 st.markdown("""
     <style>
-    .main {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
     .stApp {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    .toy-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        border: 2px solid #e0e0e0;
-        margin-bottom: 15px;
-        transition: all 0.3s;
-    }
-    .toy-card:hover {
-        border-color: #667eea;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    }
-    .toy-name {
-        font-size: 1.2em;
-        font-weight: bold;
-        color: #333;
-        margin-bottom: 10px;
-    }
-    .toy-price {
-        font-size: 1.8em;
-        color: #667eea;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-    .toy-type {
-        display: inline-block;
-        background: #e8eaf6;
-        color: #667eea;
-        padding: 5px 12px;
-        border-radius: 20px;
-        font-size: 0.85em;
-        margin-left: 8px;
-        font-weight: 500;
     }
     .stats-badge {
         background: rgba(255,255,255,0.2);
@@ -64,6 +27,17 @@ st.markdown("""
         border-radius: 20px;
         color: white;
         font-weight: 500;
+    }
+    /* Make containers look like cards */
+    .element-container {
+        background: white;
+        border-radius: 8px;
+        padding: 5px;
+    }
+    /* Style images */
+    img {
+        border-radius: 8px;
+        margin-bottom: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -236,33 +210,34 @@ def main():
                 col = cols[idx % 3]
 
                 with col:
-                    # Toy card
-                    card_html = f"""
-                    <div class="toy-card">
-                        <div class="toy-name">{toy['name']}</div>
-                        <div class="toy-price">₹{toy['price']}</div>
-                        <div>
-                            <span style="background: #f0f0f0; padding: 5px 12px; border-radius: 20px; font-size: 0.9em; color: #666;">
-                                👶 {toy.get('min_age_years', 0):.1f}-{toy.get('max_age_years', 0):.1f} years
-                            </span>
-                            {f'<span class="toy-type">{toy["type"].replace("_", " ")}</span>' if toy.get('type') else ''}
-                        </div>
-                        <p style="color: #666; font-size: 0.9em; margin-top: 10px;">
-                            {toy['short_description'][:150] + '...' if toy.get('short_description') and len(toy['short_description']) > 150 else toy.get('short_description', '')}
-                        </p>
-                    </div>
-                    """
-                    st.markdown(card_html, unsafe_allow_html=True)
+                    # Container for each toy
+                    with st.container():
+                        # Display image first
+                        if toy.get('images') and len(toy['images']) > 0:
+                            try:
+                                st.image(toy['images'][0]['url'], use_container_width=True)
+                            except Exception as e:
+                                st.write("🖼️ Image unavailable")
 
-                    # Images
-                    if toy.get('images') and len(toy['images']) > 0:
-                        st.image(toy['images'][0]['url'], use_container_width=True)
+                        # Toy details
+                        st.markdown(f"**{toy['name']}**")
+                        st.markdown(f"<h3 style='color: #667eea; margin: 5px 0;'>₹{toy['price']}</h3>", unsafe_allow_html=True)
 
-                    # View details link
-                    if toy.get('slug'):
-                        st.markdown(f"[View Details →](https://www.theelefant.ai/toy/{toy['slug']})")
+                        # Age and type badges
+                        age_badge = f"👶 {toy.get('min_age_years', 0):.1f}-{toy.get('max_age_years', 0):.1f} years"
+                        type_badge = f" • {toy['type'].replace('_', ' ')}" if toy.get('type') else ""
+                        st.caption(age_badge + type_badge)
 
-                    st.markdown("<br>", unsafe_allow_html=True)
+                        # Description
+                        if toy.get('short_description'):
+                            desc = toy['short_description'][:120] + '...' if len(toy['short_description']) > 120 else toy['short_description']
+                            st.write(desc)
+
+                        # View details link
+                        if toy.get('slug'):
+                            st.markdown(f"[View Details →](https://www.theelefant.ai/toy/{toy['slug']})")
+
+                        st.divider()
         else:
             st.warning("😔 No toys found. Try adjusting your filters!")
     else:
