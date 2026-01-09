@@ -2,6 +2,7 @@ import streamlit as st
 import sqlite3
 from typing import List, Dict, Optional
 import sys
+import pandas as pd
 
 # Fix encoding for Windows console
 if sys.platform == 'win32':
@@ -15,12 +16,84 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
+# Custom CSS for modern, clean design
 st.markdown("""
     <style>
+    /* Main app background */
     .stApp {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
+
+    /* Clean card styling */
+    .toy-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .toy-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    }
+
+    /* Image styling */
+    .toy-image {
+        border-radius: 8px;
+        width: 100%;
+        object-fit: cover;
+        aspect-ratio: 1;
+    }
+
+    /* Price styling */
+    .price-tag {
+        color: #667eea;
+        font-size: 24px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+
+    /* Badge styling */
+    .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        margin: 4px 4px 4px 0;
+        background: #f0f0f0;
+    }
+
+    .age-badge {
+        background: #e3f2fd;
+        color: #1976d2;
+    }
+
+    .type-badge {
+        background: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    /* List view styling */
+    .list-item {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .list-item img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+
+    /* Stats badge */
     .stats-badge {
         background: rgba(255,255,255,0.2);
         padding: 5px 15px;
@@ -28,16 +101,31 @@ st.markdown("""
         color: white;
         font-weight: 500;
     }
-    /* Make containers look like cards */
-    .element-container {
-        background: white;
-        border-radius: 8px;
-        padding: 5px;
+
+    /* Remove streamlit branding padding */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
     }
-    /* Style images */
-    img {
+
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: rgba(255,255,255,0.1);
+        padding: 8px;
         border-radius: 8px;
-        margin-bottom: 10px;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(255,255,255,0.2);
+        color: white;
+        border-radius: 6px;
+        padding: 8px 16px;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background-color: white;
+        color: #667eea;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -136,33 +224,150 @@ def sort_toys(toys: List[Dict], sort_by: str) -> List[Dict]:
         return sorted(toys, key=lambda x: x.get('name', '').lower(), reverse=True)
     return toys
 
+def render_toy_image(toy):
+    """Render toy image with fallback"""
+    if toy.get('images') and len(toy['images']) > 0:
+        image = toy['images'][0]
+        local_path = image.get('local_path', '')
+
+        try:
+            if local_path and local_path.strip():
+                return local_path
+            elif image.get('url'):
+                return image['url']
+        except:
+            pass
+    return None
+
+def render_grid_view(toys):
+    """Render toys in grid layout (3 columns)"""
+    cols = st.columns(3)
+
+    for idx, toy in enumerate(toys):
+        with cols[idx % 3]:
+            # Clean card container
+            with st.container():
+                # Image
+                img_src = render_toy_image(toy)
+                if img_src:
+                    try:
+                        st.image(img_src, use_column_width=True)
+                    except:
+                        st.info("🖼️ Image unavailable")
+
+                # Title
+                st.markdown(f"**{toy['name']}**")
+
+                # Price
+                st.markdown(f"<div class='price-tag'>₹{toy['price']}</div>", unsafe_allow_html=True)
+
+                # Badges
+                age_text = f"{toy.get('min_age_years', 0):.1f}-{toy.get('max_age_years', 0):.1f} yrs"
+                type_text = toy['type'].replace('_', ' ').title() if toy.get('type') else ""
+
+                badge_html = f"<span class='badge age-badge'>👶 {age_text}</span>"
+                if type_text:
+                    badge_html += f"<span class='badge type-badge'>{type_text}</span>"
+                st.markdown(badge_html, unsafe_allow_html=True)
+
+                # Description (shortened)
+                if toy.get('short_description'):
+                    desc = toy['short_description'][:100] + '...' if len(toy['short_description']) > 100 else toy['short_description']
+                    st.caption(desc)
+
+                # Link
+                if toy.get('slug'):
+                    st.markdown(f"[View Details →](https://www.theelefant.ai/toy/{toy['slug']})")
+
+                st.divider()
+
+def render_list_view(toys):
+    """Render toys in list layout"""
+    for toy in toys:
+        col1, col2 = st.columns([1, 3])
+
+        with col1:
+            img_src = render_toy_image(toy)
+            if img_src:
+                try:
+                    st.image(img_src, use_column_width=True)
+                except:
+                    st.info("🖼️ No image")
+
+        with col2:
+            st.markdown(f"### {toy['name']}")
+            st.markdown(f"<div class='price-tag'>₹{toy['price']}</div>", unsafe_allow_html=True)
+
+            # Badges
+            age_text = f"{toy.get('min_age_years', 0):.1f}-{toy.get('max_age_years', 0):.1f} years"
+            type_text = toy['type'].replace('_', ' ').title() if toy.get('type') else ""
+
+            badge_html = f"<span class='badge age-badge'>👶 {age_text}</span>"
+            if type_text:
+                badge_html += f"<span class='badge type-badge'>{type_text}</span>"
+            st.markdown(badge_html, unsafe_allow_html=True)
+
+            # Description
+            if toy.get('short_description'):
+                st.write(toy['short_description'])
+
+            # Link
+            if toy.get('slug'):
+                st.markdown(f"[View on TheElefant.ai →](https://www.theelefant.ai/toy/{toy['slug']})")
+
+        st.divider()
+
+def render_table_view(toys):
+    """Render toys in table format"""
+    table_data = []
+    for toy in toys:
+        age_range = f"{toy.get('min_age_years', 0):.1f}-{toy.get('max_age_years', 0):.1f}"
+        toy_type = toy['type'].replace('_', ' ').title() if toy.get('type') else "N/A"
+
+        table_data.append({
+            "Name": toy['name'],
+            "Price (₹)": f"₹{toy['price']}",
+            "Age (years)": age_range,
+            "Type": toy_type,
+            "Link": f"https://www.theelefant.ai/toy/{toy['slug']}" if toy.get('slug') else ""
+        })
+
+    df = pd.DataFrame(table_data)
+
+    # Display as interactive table
+    st.dataframe(
+        df,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Link": st.column_config.LinkColumn("View Details")
+        }
+    )
+
 # Main app
 def main():
     conn = get_connection()
 
     # Header
     st.markdown("<h1 style='text-align: center; color: white;'>🎁 Toy Finder</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: white; font-size: 1.2em;'>Find the Perfect Toy for Your Daughter <span class='stats-badge'>586 unique toys</span></p>", unsafe_allow_html=True)
-
-    # Images info note
-    with st.expander("ℹ️ About Images"):
-        st.write("""
-        **Images are stored locally** for better reliability!
-
-        - 1508 images downloaded and stored in the repository
-        - No more expiring CDN URLs - images load from local files
-        - All toy information (name, price, age, etc.) is accurate
-        - Click 'View Details' for more info on TheElefant.ai website
-        """)
-
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: white; font-size: 1.2em;'>Find the Perfect Toy for Your Daughter</p>", unsafe_allow_html=True)
 
     # Sidebar filters
     with st.sidebar:
-        st.header("🔍 Filters")
+        st.header("🔍 Filters & Sorting")
+
+        # Search
+        search_text = st.text_input("🔍 Search", placeholder="Search by name or description...")
 
         # Age filter
-        age = st.number_input("👶 Child's Age (years)", min_value=0.0, max_value=12.0, step=0.5, value=None, placeholder="e.g., 2.5")
+        age = st.number_input(
+            "👶 Child's Age (years)",
+            min_value=0.0,
+            max_value=12.0,
+            step=0.5,
+            value=None,
+            placeholder="Optional"
+        )
 
         # Price range
         st.subheader("💰 Budget")
@@ -178,99 +383,55 @@ def main():
         toy_types = ["All Types"] + get_toy_types(conn)
         toy_type = st.selectbox("🎲 Toy Type", toy_types)
 
-        # Search
-        search_text = st.text_input("🔍 Search Keywords", placeholder="e.g., puzzle, educational")
-
         # Sort
         sort_by = st.selectbox(
             "📊 Sort By",
             ["Price: Low to High", "Price: High to Low", "Name: A to Z", "Name: Z to A"]
         )
 
-        # Search button
-        search_clicked = st.button("🎯 Find Toys", use_container_width=True)
+        st.divider()
 
         # Reset button
-        if st.button("🔄 Reset Filters", use_container_width=True):
+        if st.button("🔄 Reset All Filters", use_container_width=True):
             st.rerun()
 
-    # Main content
-    if search_clicked or 'searched' in st.session_state:
-        st.session_state['searched'] = True
+    # Auto-fetch toys (no need to click a button)
+    toys = filter_toys(
+        conn,
+        age=age if age else None,
+        min_price=price_range[0],
+        max_price=price_range[1],
+        search_text=search_text if search_text else None,
+        toy_type=toy_type if toy_type != "All Types" else None
+    )
 
-        # Filter toys
-        toys = filter_toys(
-            conn,
-            age=age if age else None,
-            min_price=price_range[0],
-            max_price=price_range[1],
-            search_text=search_text if search_text else None,
-            toy_type=toy_type if toy_type != "All Types" else None
+    # Sort toys
+    toys = sort_toys(toys, sort_by)
+
+    # Results header with count
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        st.markdown(f"<h3 style='color: white;'>Found {len(toys)} toys</h3>", unsafe_allow_html=True)
+    with col2:
+        # View mode selector
+        view_mode = st.selectbox(
+            "View Mode",
+            ["🎴 Grid", "📋 List", "📊 Table"],
+            label_visibility="collapsed"
         )
 
-        # Sort toys
-        toys = sort_toys(toys, sort_by)
+    st.markdown("<br>", unsafe_allow_html=True)
 
-        # Display count
-        st.markdown(f"<h3 style='color: white;'>Found {len(toys)} toys</h3>", unsafe_allow_html=True)
-
-        if toys:
-            # Display toys in 3 columns
-            cols = st.columns(3)
-
-            for idx, toy in enumerate(toys):
-                col = cols[idx % 3]
-
-                with col:
-                    # Container for each toy
-                    with st.container():
-                        # Display image (prefer local image over CDN URL)
-                        if toy.get('images') and len(toy['images']) > 0:
-                            image = toy['images'][0]
-                            local_path = image.get('local_path', '')
-
-                            try:
-                                if local_path and local_path.strip():
-                                    # Use local image file
-                                    st.image(local_path, use_column_width=True)
-                                elif image.get('url'):
-                                    # Fallback to CDN URL
-                                    st.image(image['url'], use_column_width=True)
-                                else:
-                                    st.info("🖼️ Image not available")
-                            except Exception as e:
-                                # If local image fails, try CDN URL
-                                if local_path and image.get('url'):
-                                    try:
-                                        st.image(image['url'], use_column_width=True)
-                                    except:
-                                        st.info("🖼️ Image unavailable")
-                                else:
-                                    st.info("🖼️ Image unavailable")
-
-                        # Toy details
-                        st.markdown(f"**{toy['name']}**")
-                        st.markdown(f"<h3 style='color: #667eea; margin: 5px 0;'>₹{toy['price']}</h3>", unsafe_allow_html=True)
-
-                        # Age and type badges
-                        age_badge = f"👶 {toy.get('min_age_years', 0):.1f}-{toy.get('max_age_years', 0):.1f} years"
-                        type_badge = f" • {toy['type'].replace('_', ' ')}" if toy.get('type') else ""
-                        st.caption(age_badge + type_badge)
-
-                        # Description
-                        if toy.get('short_description'):
-                            desc = toy['short_description'][:120] + '...' if len(toy['short_description']) > 120 else toy['short_description']
-                            st.write(desc)
-
-                        # View details link
-                        if toy.get('slug'):
-                            st.markdown(f"[View Details →](https://www.theelefant.ai/toy/{toy['slug']})")
-
-                        st.divider()
-        else:
-            st.warning("😔 No toys found. Try adjusting your filters!")
+    # Display toys
+    if toys:
+        if view_mode == "🎴 Grid":
+            render_grid_view(toys)
+        elif view_mode == "📋 List":
+            render_list_view(toys)
+        else:  # Table
+            render_table_view(toys)
     else:
-        st.info("👈 Use the filters on the left and click 'Find Toys' to see all 586 toys!")
+        st.warning("😔 No toys found. Try adjusting your filters!")
 
 if __name__ == "__main__":
     main()
