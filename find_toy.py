@@ -20,7 +20,7 @@ if toy:
     print(f"Price: ₹{toy[2]}")
     print(f"Age Range: {toy[6]//12}-{toy[7]//12} years ({toy[6]}-{toy[7]} months)")
     print(f"Description: {toy[3] if toy[3] else 'N/A'}")
-    print(f"Link: https://www.theelefant.ai/toy/{toy[4]}")
+    print(f"Link: https://www.theelefant.ai/catalogue/{toy[4]}")
 
     # Get images
     cursor.execute("SELECT url FROM images WHERE toy_id = ?", (toy[0],))

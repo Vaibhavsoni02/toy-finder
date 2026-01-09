@@ -34,7 +34,7 @@ class ToyFinder:
                 print(f"   View: {toy['images'][0]['url']}")
 
         if toy.get('slug'):
-            print(f"🔗 URL: https://www.theelefant.ai/toy/{toy['slug']}")
+            print(f"🔗 URL: https://www.theelefant.ai/catalogue/{toy['slug']}")
 
     def search_by_age(self, age_years: float):
         """Search toys suitable for a specific age"""

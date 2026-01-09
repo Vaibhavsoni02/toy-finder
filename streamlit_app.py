@@ -277,7 +277,7 @@ def render_grid_view(toys):
 
                 # Link
                 if toy.get('slug'):
-                    st.markdown(f"[View Details →](https://www.theelefant.ai/toy/{toy['slug']})")
+                    st.markdown(f"[View Details →](https://www.theelefant.ai/catalogue/{toy['slug']})")
 
                 st.divider()
 
@@ -313,7 +313,7 @@ def render_list_view(toys):
 
             # Link
             if toy.get('slug'):
-                st.markdown(f"[View on TheElefant.ai →](https://www.theelefant.ai/toy/{toy['slug']})")
+                st.markdown(f"[View on TheElefant.ai →](https://www.theelefant.ai/catalogue/{toy['slug']})")
 
         st.divider()
 
@@ -329,7 +329,7 @@ def render_table_view(toys):
             "Price (₹)": f"₹{toy['price']}",
             "Age (years)": age_range,
             "Type": toy_type,
-            "Link": f"https://www.theelefant.ai/toy/{toy['slug']}" if toy.get('slug') else ""
+            "Link": f"https://www.theelefant.ai/catalogue/{toy['slug']}" if toy.get('slug') else ""
         })
 
     df = pd.DataFrame(table_data)
