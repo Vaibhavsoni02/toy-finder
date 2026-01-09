@@ -5,9 +5,10 @@ A complete toy scraping and filtering system for finding the perfect toy for you
 ## 📊 What This System Does
 
 1. **Scrapes** all toys from TheElefant.ai using their GraphQL API
-2. **Stores** 586 unique toys in a local SQLite database
-3. **Filters** toys by age, price, type, and keywords
-4. **Provides** both CLI and Web interfaces with sorting
+2. **Downloads** 1,508 toy images locally for reliable offline access
+3. **Stores** 434 unique toys with images in a local SQLite database
+4. **Filters** toys by age, price, type, and keywords
+5. **Provides** both CLI and Web interfaces with sorting
 
 ## 🚀 Quick Start
 
@@ -17,25 +18,33 @@ A complete toy scraping and filtering system for finding the perfect toy for you
 pip install -r requirements.txt
 ```
 
-### 2. Scrape Toy Data (Already Done!)
+### 2. Scrape Toy Data & Images (Already Done!)
 
-The toy data has been scraped and saved to `toys_data.json` with:
-- **669 total entries** (586 unique toys)
+**Toy data and images have been downloaded:**
+- **434 unique toys** with complete information
+- **1,508 images** downloaded locally (572MB in `toy_images/` directory)
+- **Images stored permanently** - no more expiring CDN URLs!
 - Age ranges: 0-12 years
 - Price range: ₹195 - ₹5,499
-- Average price: ₹1,004
 
-To re-scrape (if needed):
+Files included:
+- `toys_complete_with_local_images.json` - Full toy data with local image paths
+- `toys_new.db` - SQLite database with local image references
+- `toy_images/` - All downloaded toy images
+
+To re-scrape fresh data with images:
 ```bash
-python scraper.py
+python scrape_and_download.py  # Scrapes and downloads images immediately
+python merge_data_with_local_images.py  # Merges with complete data
+python migrate_to_local_images.py  # Updates database
 ```
 
-### 3. Setup Database (Already Done!)
+### 3. Database Setup (Already Done!)
 
-The database has been created at `toys.db`. To recreate:
-```bash
-python database.py
-```
+The database `toys_new.db` includes:
+- Full toy details (name, price, age, description, type)
+- Local image paths that work offline
+- No more expired CDN URLs!
 
 ### 4. Use the Toy Finder
 

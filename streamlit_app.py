@@ -45,7 +45,7 @@ st.markdown("""
 # Database connection
 @st.cache_resource
 def get_connection():
-    conn = sqlite3.connect('toys.db', check_same_thread=False)
+    conn = sqlite3.connect('toys_new.db', check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -111,8 +111,8 @@ def filter_toys(conn, age: Optional[float] = None, min_price: Optional[int] = No
     for row in results:
         toy_dict = dict(row)
 
-        # Fetch images
-        cursor.execute("SELECT url FROM images WHERE toy_id = ?", (toy_dict['id'],))
+        # Fetch images (prefer local_path over url)
+        cursor.execute("SELECT url, local_path FROM images WHERE toy_id = ?", (toy_dict['id'],))
         toy_dict['images'] = [dict(img) for img in cursor.fetchall()]
 
         # Convert age to years
@@ -144,15 +144,15 @@ def main():
     st.markdown("<h1 style='text-align: center; color: white;'>🎁 Toy Finder</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: white; font-size: 1.2em;'>Find the Perfect Toy for Your Daughter <span class='stats-badge'>586 unique toys</span></p>", unsafe_allow_html=True)
 
-    # Image expiration note
-    with st.expander("ℹ️ Note about Images"):
+    # Images info note
+    with st.expander("ℹ️ About Images"):
         st.write("""
-        **Image URLs expire after ~2 days** due to CDN security.
+        **Images are stored locally** for better reliability!
 
-        - Images were last scraped recently
-        - To refresh images, run: `python scraper.py && python database.py`
-        - All toy information (name, price, age, etc.) remains accurate
-        - Click 'View Details' to see current images on TheElefant.ai website
+        - 1508 images downloaded and stored in the repository
+        - No more expiring CDN URLs - images load from local files
+        - All toy information (name, price, age, etc.) is accurate
+        - Click 'View Details' for more info on TheElefant.ai website
         """)
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -224,13 +224,29 @@ def main():
                 with col:
                     # Container for each toy
                     with st.container():
-                        # Display image first (URLs may expire after ~2 days due to CDN signatures)
+                        # Display image (prefer local image over CDN URL)
                         if toy.get('images') and len(toy['images']) > 0:
+                            image = toy['images'][0]
+                            local_path = image.get('local_path', '')
+
                             try:
-                                st.image(toy['images'][0]['url'], use_column_width=True)
+                                if local_path and local_path.strip():
+                                    # Use local image file
+                                    st.image(local_path, use_column_width=True)
+                                elif image.get('url'):
+                                    # Fallback to CDN URL
+                                    st.image(image['url'], use_column_width=True)
+                                else:
+                                    st.info("🖼️ Image not available")
                             except Exception as e:
-                                # Image expired or unavailable - show placeholder
-                                st.info("🖼️ Image temporarily unavailable (CDN URL expired)\nRe-scrape data to refresh image URLs")
+                                # If local image fails, try CDN URL
+                                if local_path and image.get('url'):
+                                    try:
+                                        st.image(image['url'], use_column_width=True)
+                                    except:
+                                        st.info("🖼️ Image unavailable")
+                                else:
+                                    st.info("🖼️ Image unavailable")
 
                         # Toy details
                         st.markdown(f"**{toy['name']}**")

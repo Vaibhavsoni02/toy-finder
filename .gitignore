@@ -42,8 +42,14 @@ Thumbs.db
 # Project specific
 *.log
 .env
+.claude/settings.local.json
 
-# Keep the database and JSON files for the repo
-# Remove these lines if you don't want to commit data files
-# toys.db
-# toys_data.json
+# Database backups and old files
+toys_backup.db
+toys_old*.db*
+
+# Intermediate JSON files
+toys_with_local_images.json
+
+# Test files
+test_images.py
